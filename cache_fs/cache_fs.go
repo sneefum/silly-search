@@ -1,12 +1,16 @@
 package cache_fs
 
 import (
+	"os"
 	// "fmt"
 	"log"
-	"errors"
-	"strings"
-	"os/exec"
-	"strconv"
+	"io/fs"
+	"syscall"
+	// "errors"
+	// "strings"
+	// "strconv"
+	// "os/exec"
+	"path/filepath"
 
 	// "https://github.com/lib/pq"
 )
@@ -16,6 +20,46 @@ type File struct {
 	creation_time uint64
 	size uint64
 }
+
+func AllFilesInfo() []File {
+	results := []File{}
+
+	var skipDirs = map[string]bool{
+    	"/proc": true,
+    	"/sys":  true,
+    	"/dev":  true,
+	}
+
+
+	err := filepath.WalkDir("/", func(path string, d fs.DirEntry, err error) error {
+        if err != nil {
+            return nil
+        }
+
+		if d.IsDir() && skipDirs[path] {
+        	return filepath.SkipDir
+    	}
+
+        if d.Type().IsRegular() {
+            result := FileInfo(path)
+            results = append(results, result)
+        }
+
+        return nil
+    })
+
+    if err != nil {
+        log.Panic(err)
+    }
+
+	return results
+}
+
+/*
+
+this version was too slow because it spawns a new process every time
+it needs to get the info from a file. if the normal one stops working,
+uncomment this and hope it works. though it will take hours to run it.
 
 func FileInfo(path string) File {
 	cmd := exec.Command("stat", "-c%W,%s:%n", path)
@@ -57,4 +101,22 @@ func FileInfo(path string) File {
 	}
 
 	return f
+}
+
+*/
+
+func FileInfo(path string) File {
+    info, err := os.Stat(path)
+    if err != nil {
+        log.Panic(err)
+    }
+
+    f := File{}
+    f.name = path
+    f.size = uint64(info.Size())
+
+    stat := info.Sys().(*syscall.Stat_t)
+    f.creation_time = uint64(stat.Ctim.Sec)
+
+    return f
 }

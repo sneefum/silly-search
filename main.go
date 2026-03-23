@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	path := "main.go"
+	// path := "main.go"
 
-	testString := cache_fs.FileInfo(path)
-	fmt.Println(testString)
+	test := cache_fs.AllFilesInfo()
+	fmt.Println("%v", len(test))
 }
