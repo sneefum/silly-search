@@ -10,5 +10,5 @@ func main() {
 	// path := "main.go"
 
 	test := cache_fs.AllFilesInfo()
-	fmt.Println("%v", len(test))
+	fmt.Printf("%v\n", len(test))
 }
